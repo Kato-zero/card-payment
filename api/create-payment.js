@@ -9,6 +9,8 @@ module.exports = async (req, res) => {
 
   try {
     const body = req.body || {};
+    // Accept customerInfo (Lipila format) or flat fields
+    const info = body.customerInfo || body;
 
     /*
      * ---------------------------------------------------------
@@ -74,8 +76,8 @@ module.exports = async (req, res) => {
      */
 
     let phone = String(
-      body.phone ||
-      body.phoneNumber ||
+      info.phone ||
+      info.phoneNumber ||
       ""
     ).trim();
 
@@ -85,15 +87,12 @@ module.exports = async (req, res) => {
       accountNumber = "260" + accountNumber.substring(1);
     }
 
-    if (!accountNumber.startsWith("260")) {
-      accountNumber = "260" + accountNumber;
-    }
 
-    // Zambia: 260 + 9 digits = 12 digits
-    if (accountNumber.length !== 12) {
+    // Accept any phone number with 7 to 15 digits
+    if (accountNumber.length < 7 || accountNumber.length > 15) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Zambian phone number."
+        message: "Please enter a valid phone number."
       });
     }
 
@@ -118,7 +117,7 @@ module.exports = async (req, res) => {
       const payload = {
         referenceId: referenceId,
         amount: amount,
-        narration: "Daffodil Care donation",
+        narration: String(body.narration || "Night of Laughter tickets").trim().slice(0, 100),
         accountNumber: accountNumber,
         currency: "ZMW",
         referenceData: customerName
@@ -190,45 +189,33 @@ module.exports = async (req, res) => {
 
     if (paymentMethod === "card") {
       const firstName = String(
-        body.firstName || ""
+        info.firstName || ""
       ).trim();
 
       const lastName = String(
-        body.lastName || ""
+        info.lastName || ""
       ).trim();
 
       const email = String(
-        body.email || ""
+        info.email || ""
       ).trim();
 
       const city = String(
-        body.city || "Lusaka"
+        info.city || "Lusaka"
       ).trim();
 
       const country = String(
-        body.country || "ZM"
+        info.country || "ZM"
       ).trim();
 
       const address = String(
-        body.address || ""
+        info.address || ""
       ).trim();
 
       const zip = String(
-        body.zip || ""
+        info.zip || ""
       ).trim();
 
-      /*
-       * Card number
-       *
-       * The frontend may send spaces between groups of four,
-       * so remove all non-numeric characters.
-       */
-
-      const cardNumber = String(
-        body.cardNumber ||
-        body.accountNumber ||
-        ""
-      ).replace(/\D/g, "");
 
       /*
        * Validate card information
@@ -264,21 +251,6 @@ module.exports = async (req, res) => {
         });
       }
 
-      /*
-       * Basic card-number validation.
-       *
-       * This intentionally does NOT log the card number.
-       */
-
-      if (
-        cardNumber.length < 12 ||
-        cardNumber.length > 19
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid card number."
-        });
-      }
 
       /*
        * Build the Card Collections request exactly as
@@ -300,8 +272,8 @@ module.exports = async (req, res) => {
         collectionRequest: {
           referenceId: referenceId,
           amount: amount,
-          narration: "Daffodil Care donation",
-          accountNumber: cardNumber,
+          narration: String(body.narration || "Night of Laughter tickets").trim().slice(0, 100),
+          accountNumber: accountNumber,
           currency: "ZMW",
 
           /*
