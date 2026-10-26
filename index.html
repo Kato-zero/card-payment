@@ -199,7 +199,7 @@
       </div>
       <div class="field">
         <label for="phone">Phone number</label>
-        <div class="phone-row"><span class="pfx" id="phonePrefix"></span><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="971234567" maxlength="11"></div>
+        <div class="phone-row"><span class="pfx" id="phonePrefix"></span><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="971234567" maxlength="15"></div>
       </div>
       <div class="field"><label for="city">City</label><input id="city" name="city" autocomplete="address-level2"></div>
       <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email"></div>
@@ -395,7 +395,7 @@
       if (!Number.isFinite(amount) || amount < CONFIG.minAmount) throw new Error('Please choose an amount of at least ' + money(CONFIG.minAmount) + '.');
       if (!firstName || !lastName) throw new Error('Please enter your first and last name.');
       if (!emailOk(email)) throw new Error('Please enter a valid email address.');
-      if (phone.length !== 9) throw new Error('Please enter a valid 9-digit mobile number.');
+      if (phone.length < 7 || phone.length > 15) throw new Error('Please enter a valid phone number (7 to 15 digits).');
       if (!city || !zip || !address) throw new Error('Please complete your city, postal code and address.');
     } catch (err) {
       return setStatus('err', esc(err.message));
@@ -416,7 +416,7 @@
           customerInfo: {
             firstName: firstName,
             lastName: lastName,
-            phoneNumber: CONFIG.phonePrefix + phone,   // backend normalises to 260XXXXXXXXX
+            phoneNumber: phone.charAt(0) === "0" ? "260" + phone.slice(1) : phone,   // local 0-numbers become 260, others sent as entered
             city: city,
             country: CONFIG.countryName,
             address: address,
