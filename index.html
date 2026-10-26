@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Night of Laughter | Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0e3b2c;     /* main colour (buttons, selected states) */
+    --brand-soft: #2b7a57;
+    --accent: #f7c62f;    /* highlight colour */
+    --bg: #f4f5f1;
+    --card: #ffffff;
+    --ink: #141c18;
+    --muted: #6b7570;
+    --field: #f4f5f1;
+    --danger: #b4372b;
+    --ok-bg: #e6eee4;
+    --err-bg: #fdeceb;
+    --radius: 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh;
+    display: grid; place-items: start center; padding: 32px 16px; }
+  .wrap { width: min(560px, 100%); }
+  .site-name { font-weight: 700; color: var(--brand); font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+  .card { background: var(--card); border-radius: 24px; box-shadow: 0 12px 32px -16px rgba(20,28,24,.22); padding: 28px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: .95rem; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 10px; }
+
+  /* Option tiles (price options) */
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .option { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 14px 16px; border-radius: var(--radius); background: var(--bg); cursor: pointer;
+    border: 2px solid transparent; transition: border-color .15s, background .15s; user-select: none; }
+  .option:hover { background: #eceee8; }
+  .option.on { border-color: var(--brand-soft); background: #fff; box-shadow: 0 2px 10px -4px rgba(14,59,44,.35); }
+  .option input { position: absolute; opacity: 0; pointer-events: none; }
+  .option .name { font-weight: 600; font-size: .95rem; }
+  .option .desc { display: block; font-size: .8rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  .option .price { font-weight: 700; color: var(--brand); white-space: nowrap; }
+  .option.full { grid-column: 1 / -1; }
+
+  /* Custom amount */
+  .custom-box { display: none; margin-top: 10px; }
+  .custom-box.on { display: block; }
+
+  /* Fields */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 6px; font-size: .88rem; color: var(--muted); }
+  .field input { width: 100%; padding: 13px 15px; border: 0; border-radius: 14px; background: var(--field);
+    font-size: 1rem; outline: none; font-family: inherit; color: var(--ink); }
+  .field input:focus { box-shadow: 0 0 0 3px rgba(43,122,87,.3); background: #fff; }
+  .amount-wrap { position: relative; }
+  .amount-wrap .cur { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--muted); pointer-events: none; }
+  .amount-wrap input { padding-left: 52px; font-weight: 700; font-size: 1.1rem; }
+  .phone-row { display: flex; gap: 8px; }
+  .phone-row .pfx { flex: none; width: 72px; display: grid; place-items: center; border-radius: 14px; background: var(--field); font-weight: 650; color: var(--muted); }
+  .phone-row input { flex: 1; }
+
+  /* Summary & actions */
+  .summary { background: var(--bg); border-radius: var(--radius); padding: 14px 16px; margin: 20px 0 14px; }
+  .summary .row { display: flex; justify-content: space-between; font-size: .92rem; margin: 4px 0; color: var(--muted); }
+  .summary .total { color: var(--ink); font-weight: 700; font-size: 1.05rem; border-top: 1px solid #e0e3dc; margin-top: 8px; padding-top: 10px; }
+  .btn { width: 100%; min-height: 50px; border: 0; border-radius: 999px; background: var(--brand); color: #fff;
+    font-weight: 600; font-size: 1rem; cursor: pointer; font-family: inherit; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .secure { display: flex; gap: 8px; align-items: center; background: var(--ok-bg); color: var(--brand);
+    border-radius: 14px; padding: 10px 12px; font-size: .82rem; margin: 0 0 16px; }
+  .status { margin: 16px 0 0; padding: 14px 16px; border-radius: 16px; font-size: .92rem; line-height: 1.5; display: none; }
+  .status.on { display: block; }
+  .status.wait { background: var(--bg); }
+  .status.err { background: var(--err-bg); color: #8f2b21; }
+  .spin { width: 16px; height: 16px; border: 2px solid rgba(20,28,24,.18); border-top-color: var(--brand);
+    border-radius: 50%; display: inline-block; vertical-align: -3px; margin-right: 9px; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result screens */
+  .done { text-align: center; padding: 24px 6px; }
+  .done .ic { width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 16px;
+    font-size: 1.9rem; font-weight: 700; background: var(--ok-bg); color: var(--brand); }
+  .done.bad .ic { background: var(--err-bg); color: var(--danger); }
+  .done.wait .ic { background: var(--bg); color: var(--muted); }
+  .done p { color: var(--muted); margin: 0 auto 18px; max-width: 36ch; }
+  .again { border: 0; background: none; color: var(--brand-soft); font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+  @media (max-width: 520px) { .pair { grid-template-columns: 1fr; } .options { grid-template-columns: 1fr; } }
+
+  /* ===================== Night of Laughter theme ===================== */
+  :root {
+    --brand: #B9821F;       /* site gold */
+    --brand-soft: #B9821F;
+    --accent: #B9821F;
+    --bg: #F4EBDD;          /* cream paper */
+    --card: #FFFDF7;
+    --ink: #17110A;         /* near-black ink for outlines and shadows */
+    --muted: #6B5A44;
+    --field: #F3E9D6;
+    --ok-bg: #F1E3BF;
+    --err-bg: #F9D9CF;
+    --danger: #8E2A1E;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  body {
+    background-color: var(--bg);
+    background-image: radial-gradient(rgba(23,17,10,.12) 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+  .wrap { width: min(560px, 100%); }
+  .nol-logo { display: block; width: 170px; max-width: 70%; height: auto; margin: 0 0 14px; }
+  .site-name { font-family: 'Anton', Impact, sans-serif; font-size: 1.05rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink); margin-bottom: 14px; }
+
+  .card { background: var(--card); border: 3px solid var(--ink); border-radius: 6px;
+    box-shadow: 8px 8px 0 var(--ink); padding: 30px; }
+  h1 { font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase;
+    letter-spacing: .02em; font-size: 2.3rem; line-height: 1.05; color: var(--ink);
+    padding-bottom: 14px; border-bottom: 3px dashed var(--ink); margin-bottom: 8px; }
+  .sub { color: var(--muted); font-style: italic; }
+  h2 { color: var(--ink); font-weight: 700; letter-spacing: .1em; font-size: .78rem; }
+
+  /* Ticket type tiles */
+  .option { border: 2px solid var(--ink); border-radius: 10px; background: var(--field);
+    box-shadow: 3px 3px 0 var(--ink); }
+  .option:hover { background: #EBDDC2; }
+  .option.on { background: var(--brand); border-color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+  .option .name { font-family: 'Anton', Impact, sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: 1.1rem; color: var(--ink); }
+  .option .desc { color: var(--muted); }
+  .option .price { font-family: 'Anton', Impact, sans-serif; font-size: 1.15rem; color: var(--ink); }
+
+  /* Fields */
+  .field label { color: var(--ink); text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; font-weight: 700; }
+  .field input { border: 2px solid var(--ink); border-radius: 8px; background: var(--card); }
+  .field input:focus { background: #fff; box-shadow: 4px 4px 0 var(--brand); }
+  .phone-row .pfx { border: 2px solid var(--ink); border-radius: 8px; background: var(--field); color: var(--ink); }
+  .amount-wrap .cur { color: var(--ink); }
+
+  /* Order summary as a ticket stub */
+  .summary { background: var(--field); border: 2px dashed var(--ink); border-radius: 10px; }
+  .summary .row { color: var(--muted); }
+  .summary .total { color: var(--ink); font-family: 'Anton', Impact, sans-serif; font-size: 1.3rem;
+    letter-spacing: .03em; text-transform: uppercase; }
+
+  /* Buttons */
+  .btn { background: var(--brand); color: var(--ink); border: 3px solid var(--ink); border-radius: 10px;
+    box-shadow: 5px 5px 0 var(--ink); font-family: 'Anton', Impact, sans-serif; text-transform: uppercase;
+    letter-spacing: .08em; font-size: 1.25rem; min-height: 56px; transition: transform .1s, box-shadow .1s; }
+  .btn:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+  .btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn:disabled { opacity: .6; }
+
+  /* Notices and status */
+  .secure { background: var(--ok-bg); color: var(--ink); border: 2px solid var(--ink); border-radius: 8px; }
+  .status { border: 2px solid var(--ink); border-radius: 8px; }
+  .status.wait { background: var(--field); }
+  .status.err { background: var(--err-bg); color: #6E1D13; }
+  .spin { border-color: rgba(23,17,10,.25); border-top-color: var(--ink); }
+
+  /* Result screens */
+  .done .ic { background: var(--brand); color: var(--ink); border: 3px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink); }
+  .done.bad .ic { background: var(--err-bg); }
+  .done.wait .ic { background: var(--field); }
+  .again { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <img class="nol-logo" src="https://i.postimg.cc/FKCPHGym/logo-%281%29.png" alt="Night of Laughter" referrerpolicy="no-referrer">
+  <div class="site-name" id="siteName"></div>
+  <div class="card" id="checkoutWrap">
+    <h1 id="heading">Checkout</h1>
+    <p class="sub" id="subheading"></p>
+
+    <form id="checkoutForm" novalidate>
+      <input type="hidden" id="amount" name="amount" value="">
+
+      <h2 id="optionsLabel">Amount</h2>
+      <div class="options" id="options" role="radiogroup"></div>
+
+      <div class="custom-box" id="customBox">
+        <div class="field">
+          <label for="customAmount">Enter your amount</label>
+          <div class="amount-wrap"><span class="cur" id="curSymbol"></span><input id="customAmount" type="number" inputmode="decimal" step="0.01"></div>
+        </div>
+      </div>
+
+      <h2>Your details</h2>
+      <div class="pair">
+        <div class="field"><label for="firstName">First name</label><input id="firstName" name="firstName" autocomplete="given-name"></div>
+        <div class="field"><label for="lastName">Last name</label><input id="lastName" name="lastName" autocomplete="family-name"></div>
+      </div>
+      <div class="field">
+        <label for="phone">Phone number</label>
+        <div class="phone-row"><span class="pfx" id="phonePrefix"></span><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="971234567" maxlength="11"></div>
+      </div>
+      <div class="field"><label for="city">City</label><input id="city" name="city" autocomplete="address-level2"></div>
+      <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email"></div>
+      <div class="field"><label for="address">Address</label><input id="address" name="address" autocomplete="street-address"></div>
+      <div class="field"><label for="zip">ZIP</label><input id="zip" name="zip" inputmode="numeric" autocomplete="postal-code"></div>
+      <div class="field"><label for="narration">Narration</label><input id="narration" name="narration" maxlength="100" placeholder="e.g. Tickets for Friday show"></div>
+
+      <div class="secure">🔒 <span>After you continue, you will enter your card details securely on <b id="providerName"></b>'s payment page.</span></div>
+
+      <div class="summary" id="summary"></div>
+      <button class="btn" type="submit" id="payBtn">Pay</button>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     SITE CONFIG — the only part you need to change for each website
+     ===================================================================== */
+  var CONFIG = {
+    siteName:     'Night of Laughter',
+    heading:      'Get your tickets',
+    subheading:   'Happily after: everything to us is a laughing matter.',
+    currency:     'K',                 // symbol shown before amounts
+    currencyCode: 'ZMW',               // used in summary text
+    countryName:  'Zambia',               // sent with the request
+    phonePrefix:  '260',               // Lipila format: 260 with no plus sign
+    providerName: 'Lipila',
+    defaultCity:  'Lusaka',
+
+    /*
+     * EVENTS: add, edit or remove events here. Each event has its own
+     * ticket types and prices (the "tiers").
+     *
+     * Open the page with ?event=<id> to pick an event,
+     * e.g. checkout.html?event=saturday-late
+     * If no event is given, defaultEvent is used.
+     *
+     * Price: set "amount" in each tier (currency units, e.g. 150 = K150).
+     * Tiers: add, remove or rename entries in the "tiers" list.
+     */
+    events: {
+      'friday-show': {
+        name:    'Friday Night Show',
+        details: 'Friday 6 November 2026 · Lusaka',
+        tiers: [
+          { label: 'Regular',   description: 'General admission',      amount: 150 },
+          { label: 'VIP',       description: 'Reserved seating',       amount: 300 },
+          { label: 'Front Row', description: 'Best view in the house', amount: 500 }
+        ]
+      },
+      'saturday-late': {
+        name:    'Saturday Late Show',
+        details: 'Saturday 7 November 2026 · Lusaka',
+        tiers: [
+          { label: 'Regular', description: 'General admission', amount: 200 },
+          { label: 'VIP',     description: 'Reserved seating',  amount: 350 }
+        ]
+      }
+    },
+    defaultEvent: 'friday-show',
+    allowCustom:  false,
+    customLabel:  'Other amount',
+    minAmount:    50,                  // backend rejects anything below K50
+
+    // Endpoints on your backend
+    createUrl:    '/api/create-payment',
+    statusUrl:    '/api/check-payment-status',
+
+    // Polling after the customer returns from the provider
+    pollIntervalMs: 5000,
+    maxPollAttempts: 120,
+    successText: 'Your payment was received. Thank you for booking with Night of Laughter. See you at the show!',
+    failedText:  'The payment was not completed. You have not been charged.',
+    pendingText: 'The payment provider has not confirmed the result yet. If you completed the payment, please do not pay again.'
+  };
+
+  /* ---------------------------------------------------------------------- */
+
+  var $ = function (s) { return document.querySelector(s); };
+  var form = $('#checkoutForm'), btn = $('#payBtn'), statusEl = $('#status'), wrap = $('#checkoutWrap');
+  var REF_KEY = 'checkout_reference_' + location.host;
+  var selected = null;                 // amount in currency units
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function money(n) { return CONFIG.currency + Number(n).toFixed(2); }
+  function emailOk(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+  function setStatus(cls, html) { statusEl.className = 'status on ' + cls; statusEl.innerHTML = html; }
+  function clearStatus() { statusEl.className = 'status'; statusEl.innerHTML = ''; }
+
+  /* ---------- pick the event from ?event=<id>, else the default ---------- */
+  var eventId = new URLSearchParams(location.search).get('event') || CONFIG.defaultEvent;
+  var EVENT = CONFIG.events[eventId] || CONFIG.events[CONFIG.defaultEvent];
+  CONFIG.options = EVENT.tiers;
+  CONFIG.heading = EVENT.name;
+  CONFIG.subheading = EVENT.details || CONFIG.subheading;
+
+  /* ---------- static text from config ---------- */
+  $('#siteName').textContent = CONFIG.siteName;
+  $('#heading').textContent = CONFIG.heading;
+  $('#subheading').textContent = CONFIG.subheading;
+  $('#curSymbol').textContent = CONFIG.currency;
+  $('#phonePrefix').textContent = CONFIG.phonePrefix;
+  $('#providerName').textContent = CONFIG.providerName;
+  $('#city').value = CONFIG.defaultCity;
+  document.title = CONFIG.heading;
+
+  /* ---------- build price options ---------- */
+  var optionsEl = $('#options');
+  var customBox = $('#customBox');
+  var customInput = $('#customAmount');
+
+  function buildOptions() {
+    var html = CONFIG.options.map(function (o, i) {
+      return '<label class="option" data-index="' + i + '">' +
+        '<input type="radio" name="option" value="' + i + '">' +
+        '<span><span class="name">' + esc(o.label) + '</span>' +
+        (o.description ? '<span class="desc">' + esc(o.description) + '</span>' : '') + '</span>' +
+        '<span class="price">' + money(o.amount) + '</span></label>';
+    }).join('');
+    if (CONFIG.allowCustom) {
+      html += '<label class="option full" data-index="custom">' +
+        '<input type="radio" name="option" value="custom">' +
+        '<span class="name">' + esc(CONFIG.customLabel) + '</span></label>';
+    }
+    optionsEl.innerHTML = html;
+    if (!CONFIG.options.length && !CONFIG.allowCustom) {
+      optionsEl.innerHTML = '<p class="sub">No options are available right now.</p>';
+    }
+  }
+
+  function selectOption(key) {
+    optionsEl.querySelectorAll('.option').forEach(function (el) {
+      var on = el.dataset.index === String(key);
+      el.classList.toggle('on', on);
+      el.querySelector('input').checked = on;
+    });
+    if (key === 'custom') {
+      customBox.classList.add('on');
+      selected = parseFloat(customInput.value) || null;
+      customInput.focus();
+    } else {
+      customBox.classList.remove('on');
+      selected = CONFIG.options[key].amount;
+    }
+    updateSummary();
+  }
+
+  function updateSummary() {
+    var amt = Number(selected);
+    var valid = Number.isFinite(amt) && amt >= CONFIG.minAmount;
+    $('#amount').value = valid ? amt : '';
+    $('#summary').innerHTML =
+      '<div class="row"><span>Amount</span><span>' + (valid ? money(amt) : '—') + '</span></div>' +
+      '<div class="row total"><span>Total</span><span>' + (valid ? money(amt) : '—') + '</span></div>';
+    btn.textContent = valid ? 'Pay ' + money(amt) : 'Pay';
+    if (valid) clearStatus();
+  }
+
+  optionsEl.addEventListener('click', function (e) {
+    var el = e.target.closest('.option');
+    if (el) selectOption(el.dataset.index === 'custom' ? 'custom' : Number(el.dataset.index));
+  });
+  customInput.addEventListener('input', function () {
+    selected = parseFloat(customInput.value) || null;
+    updateSummary();
+  });
+
+  /* ---------- field formatting ---------- */
+  $('#phone').addEventListener('input', function (e) {
+    var d = e.target.value.replace(/\D/g, '').slice(0, 9);
+    e.target.value = d.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+  });
+
+  /* ---------- submit: validate, create payment, redirect ---------- */
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var f = form.elements;
+    var amount = Number($('#amount').value);
+    var firstName = f.firstName.value.trim(), lastName = f.lastName.value.trim();
+    var email = f.email.value.trim(), phone = f.phone.value.replace(/\D/g, '');
+    var city = f.city.value.trim(), zip = f.zip.value.trim(), address = f.address.value.trim();
+
+    try {
+      if (!Number.isFinite(amount) || amount < CONFIG.minAmount) throw new Error('Please choose an amount of at least ' + money(CONFIG.minAmount) + '.');
+      if (!firstName || !lastName) throw new Error('Please enter your first and last name.');
+      if (!emailOk(email)) throw new Error('Please enter a valid email address.');
+      if (phone.length !== 9) throw new Error('Please enter a valid 9-digit mobile number.');
+      if (!city || !zip || !address) throw new Error('Please complete your city, postal code and address.');
+    } catch (err) {
+      return setStatus('err', esc(err.message));
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>Processing…';
+    setStatus('wait', '<span class="spin"></span>Preparing secure checkout…');
+
+    try {
+      var response = await fetch(CONFIG.createUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_method: 'card',
+          amount: amount,
+          narration: f.narration.value.trim() || EVENT.name,
+          customerInfo: {
+            firstName: firstName,
+            lastName: lastName,
+            phoneNumber: CONFIG.phonePrefix + phone,   // backend normalises to 260XXXXXXXXX
+            city: city,
+            country: CONFIG.countryName,
+            address: address,
+            email: email,
+            zip: zip
+          },
+          backUrl: window.location.href
+        })
+      });
+
+      var raw = await response.text(), data;
+      try { data = JSON.parse(raw); } catch (_) { throw new Error('The payment server returned an invalid response.'); }
+      if (!response.ok) throw new Error(data.message || 'Unable to start the payment.');
+
+      var redirectUrl = data.cardRedirectionUrl || (data.data && data.data.cardRedirectionUrl) ||
+                        data.redirectUrl || (data.data && data.data.redirectUrl);
+      if (!redirectUrl) throw new Error('No checkout URL was returned by the payment provider.');
+
+      if (data.referenceId) sessionStorage.setItem(REF_KEY, data.referenceId);
+      window.location.assign(redirectUrl);
+    } catch (err) {
+      setStatus('err', esc(err.message || 'Something went wrong. Please try again.'));
+      btn.disabled = false;
+      updateSummary();
+    }
+  });
+
+  /* ---------- result screen and polling after the provider redirects back ---------- */
+  function showResult(kind, title, msg) {
+    var ic = kind === 'ok' ? '✓' : kind === 'bad' ? '✕' : '⏳';
+    wrap.innerHTML = '<div class="done ' + (kind === 'ok' ? '' : kind) + '"><div class="ic">' + ic + '</div>' +
+      '<h1 style="font-size:1.3rem">' + esc(title) + '</h1><p>' + esc(msg) + '</p>' +
+      '<button class="again" type="button" onclick="location.href=location.pathname">Start a new payment</button></div>';
+  }
+
+  function poll(referenceId, attempts) {
+    setStatus('wait', '<span class="spin"></span>Confirming your payment…');
+    var next = function () {
+      if (attempts + 1 < CONFIG.maxPollAttempts) setTimeout(function () { poll(referenceId, attempts + 1); }, CONFIG.pollIntervalMs);
+      else showResult('wait', 'Confirmation is taking longer', CONFIG.pendingText);
+    };
+
+    fetch(CONFIG.statusUrl + '?referenceId=' + encodeURIComponent(referenceId) + '&t=' + Date.now(),
+          { cache: 'no-store', headers: { Accept: 'application/json' } })
+      .then(function (r) {
+        return r.text().then(function (raw) {
+          var result; try { result = JSON.parse(raw); } catch (_) { result = {}; }
+          return result;
+        });
+      })
+      .then(function (result) {
+        var state = String(result.state || (result.data && result.data.status) || result.status || 'pending').toLowerCase();
+        if (['successful', 'success', 'completed', 'paid'].indexOf(state) !== -1) {
+          sessionStorage.removeItem(REF_KEY);
+          return showResult('ok', 'Payment successful', CONFIG.successText);
+        }
+        if (['failed', 'failure', 'cancelled', 'canceled', 'rejected', 'declined'].indexOf(state) !== -1) {
+          sessionStorage.removeItem(REF_KEY);
+          return showResult('bad', 'Payment failed', (result.data && result.data.message) || CONFIG.failedText);
+        }
+        next();   // pending, unknown or temporary error: keep waiting
+      })
+      .catch(next);
+  }
+
+  /* ---------- boot ---------- */
+  buildOptions();
+  var defaultIndex = (CONFIG.defaultOption >= 0 && CONFIG.defaultOption < CONFIG.options.length) ? CONFIG.defaultOption : null;
+  if (defaultIndex !== null) selectOption(defaultIndex);
+  else updateSummary();
+
+  var savedRef = sessionStorage.getItem(REF_KEY);
+  if (savedRef) {
+    wrap.innerHTML = '<div class="done wait"><div class="ic">⏳</div><h1 style="font-size:1.3rem">Checking your payment…</h1><p>Please wait while we confirm the result.</p></div>';
+    poll(savedRef, 0);
+  }
+})();
+</script>
+</body>
+</html>
